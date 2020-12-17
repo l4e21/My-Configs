@@ -81,7 +81,7 @@
 
 ;; Set mode-line format
 
-(setf *mode-line-foreground-color* "#fa8072")
+(setf *mode-line-foreground-color* "#90a7ff")
 (setf *mode-line-background-color* "#38394c")
 
 (setf *screen-mode-line-format*
@@ -114,19 +114,21 @@
 
 
 ;; Background 
-(run-shell-command "feh --bg-center $HOME/Pictures/pastel1.jpg")
+(run-shell-command "feh --bg-center $HOME/Pictures/justpretty/bastille.png")
 (run-shell-command "discord")
 ;;(run-shell-command "hexchat")
 ;;(run-shell-command "spotify")
 ;;(run-shell-command "firefox")
 (run-shell-command "guake")
+(run-shell-command "xinput --set-prop 12 306 1.5")
+(run-shell-command "xinput --set-prop 12 305 1.5")
 
 
 
 
 ;;Message & Input Bar
 
-(set-fg-color "#61afef")
+(set-fg-color "#90a7ff")
 (set-bg-color "#21252b")
 (set-border-color "#21252b")
 (set-win-bg-color "#21252b")
@@ -137,8 +139,9 @@
 (setf *normal-border-width* 1)
 (set-msg-border-width 10)
 (setf *window-border-style* :thin)
-
-
+(setf *message-window-gravity* :bottom-right)
+(setf *message-window-input-gravity* :bottom-right)
+(setf *input-window-gravity* :bottom-right)
 
 
 
