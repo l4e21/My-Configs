@@ -89,7 +89,7 @@
     chargingq))
 
 
-3(defun maybecharge (chargingquery)
+(defun maybecharge (chargingquery)
   (if (string= chargingquery "Charging")
       "+"
       ""))
