@@ -1,3 +1,6 @@
-# StumpConfig
-My StumpWM config in Common Lisp, along with Compton Compositor config and emacs config and now with Nyxt Browser config. Everything is lisp!
-Recent changes: Added shell commands upon startup for altering mouse acceleration and velocity scaling 
+# WMConfig
+My StumpWM config in Common Lisp, along with Compton Compositor config and emacs config and now with herbstluftWM configs. Everything is lisp! Or at least was.
+
+Recent changes: 
+-Added slack mouse policy for StumpWM and natural scrolling. 
+-HerbstluftWM and panel configs added 
