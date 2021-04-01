@@ -8,6 +8,12 @@
 (require 'swm-gaps)
 
 
+;; Important commands to remember
+;; C-z ; quit (go back to desktop manager)
+;; C-z ; toggle-gaps-off (turn off gaps)
+
+
+
 ;; Header Gaps
 (setf swm-gaps:*head-gaps-size* 0)
 
@@ -25,12 +31,16 @@
 
 
 
-;; Super Key name, also change the prefix key to something else
-
+;; Change prefix key
 (run-shell-command "xmodmap -e 'clear mod4'")
-(run-shell-command "xmodmap -e \'keycode 133 = F20\'")
+(run-shell-command "xmodmap -e 'keycode F20 = Super_L'")
+(run-shell-command "xmodmap -e 'add mod4 = Super_L'")
 
 (set-prefix-key (kbd "C-z"))
+
+;; Sloppy mouse policy
+
+(setf *mouse-focus-policy* :sloppy)
 
 ;; prompt the user for an interactive command. The first arg is an
 ;; optional initial contents.
@@ -113,16 +123,23 @@
 
 
 
-;; Background 
+;; Background apps to run on startup
 (run-shell-command "feh --bg-center $HOME/Pictures/justpretty/bastille.png")
 (run-shell-command "discord")
 ;;(run-shell-command "hexchat")
 ;;(run-shell-command "spotify")
-;;(run-shell-command "firefox")
+(run-shell-command "firefox")
 (run-shell-command "guake")
-(run-shell-command "xinput --set-prop 12 306 1.5")
-(run-shell-command "xinput --set-prop 12 305 1.5")
 
+(run-shell-command "xterm -e fish -c \"curl http://wttr.in && sleep 30\"")
+
+;; Mouse speed alteration for super fast mouse and natural scrolling
+(run-shell-command "xinput --set-prop 11 'Device Accel Velocity Scaling' 5")
+(run-shell-command "xinput --set-prop 11 'Device Accel Constant Deceleration' 0.5")
+(run-shell-command "xinput --set-prop 11 'Synaptics Scrolling Distance' -68 -68")
+(run-shell-command "xinput --set-prop 12 'Device Accel Velocity Scaling' 5")
+(run-shell-command "xinput --set-prop 12 'Device Accel Constant Deceleration' 0.5")
+(run-shell-command "xinput --set-prop 12 'Synaptics Scrolling Distance' -68 -68")
 
 
 
@@ -160,9 +177,8 @@
 (define-key *top-map* (kbd "SunPrint_Screen") "exec xfce4-screenshooter")
 
 ;;Open appfinder
-(define-key *top-map* (kbd "F20") "exec nautilus")
 
-
+(define-key *top-map* (kbd "Super_L") "exec thunar") 
 
 
 
