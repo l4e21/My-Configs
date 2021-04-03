@@ -6,8 +6,17 @@
 
 (in-package :stumpwm)
 (require 'swm-gaps)
+(ql:quickload :swank)
 
+;; Link slime to stump, use prefix : (swank) to start the link
 
+(defcommand swank () ()
+    (swank:create-server :port 4005
+                       :style swank:*communication-style*
+                       :dont-close t)
+  (echo-string (current-screen) 
+	       "Starting swank. M-x slime-connect RET RET, then (in-package stumpwm)."))
+;rest
 ;; Important commands to remember
 ;; C-z ; quit (go back to desktop manager)
 ;; C-z ; toggle-gaps-off (turn off gaps)
@@ -65,11 +74,19 @@
 
 ;; Get volume
 
-(defun getvolume()
+(defun getvolume ()
   (run-shell-command "amixer get Master | grep 'Mono:' | awk -F'[][]' '{ print $2 }'" t))
 
+(defun mutedp ()
+  (let ((command (run-shell-command "amixer get Master | grep 'Mono:' | awk -F'[][]' '{ print $6 }'" t)))
+    (subseq command 0 (1- (length command)))))
 
+(defun maybemute (mutedp)
+  (if (string= mutedp "off")
+      "m"
+      ""))
 
+  
 
 ;; Battery
 
@@ -111,6 +128,7 @@
 	    "%d  "
 	    "[Vol: " 
 	    '(:eval (string-trim '(#\newline) (getvolume)))
+	    '(:eval (string-trim '(#\newline) (maybemute (mutedp))))
             "]"
 	    "  [Signal: %I]"
 	    "  [Life:"
@@ -337,4 +355,3 @@ is found, just displays nil."
 ;;; Add mode-line formatter
 
 (add-screen-mode-line-formatter #\I #'fmt-wifi)
-
