@@ -12,15 +12,13 @@
  ;; If there is more than one, they won't work right.
  '(ansi-color-names-vector
    ["#242424" "#e5786d" "#95e454" "#cae682" "#8ac6f2" "#333366" "#ccaa8f" "#f6f3e8"])
- '(custom-enabled-themes (quote (deeper-blue)))
+ '(custom-enabled-themes '(deeper-blue))
  '(custom-safe-themes
-   (quote
-    ("b0334e8e314ea69f745eabbb5c1817a173f5e9715493d63b592a8dc9c19a4de6" default)))
+   '("b0334e8e314ea69f745eabbb5c1817a173f5e9715493d63b592a8dc9c19a4de6" default))
  '(global-display-line-numbers-mode t)
  '(package-selected-packages
-   (quote
-    (elpy restart-emacs ivy-explorer doom-themes doom-modeline lispy rust-mode haskell-mode isortify anaconda-mode auto-virtualenv jedi format-all python-mode python)))
- '(send-mail-function (quote mailclient-send-it))
+   '(nyan-mode rainbow-delimiters slime ivy elpy restart-emacs ivy-explorer doom-themes doom-modeline lispy rust-mode haskell-mode isortify anaconda-mode auto-virtualenv jedi format-all python-mode python))
+ '(send-mail-function 'mailclient-send-it)
  '(show-paren-mode t))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -43,10 +41,22 @@
 
 (line-number-mode 1)
 (column-number-mode 1)
+(set-frame-font "Inconsolata 12" nil t)
+0
+;; Melpa
+
+(require 'package)
+(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
+
+
+;; Now install the necessary files and then uncomment the rest
+
 
 ;;MODELINE
 
 (require 'doom-modeline)
+(require 'nyan-mode)
+(nyan-mode 1)
 (doom-modeline-mode 1)
 (setq doom-modeline-buffer-state-icon t)
 (setq doom-modeline-major-mode-icon t)
@@ -68,31 +78,9 @@
 (setq enable-recursive-minibuffers t)
 ;; enable this if you want `swiper' to use it
 ;; (setq search-default-mode #'char-fold-to-regexp)
-(global-set-key "\C-s" 'swiper)
-(global-set-key (kbd "C-c C-r") 'ivy-resume)
-(global-set-key (kbd "<f6>") 'ivy-resume)
-(global-set-key (kbd "M-x") 'counsel-M-x)
-(global-set-key (kbd "C-x C-f") 'counsel-find-file)
-(global-set-key (kbd "<f1> f") 'counsel-describe-function)
-(global-set-key (kbd "<f1> v") 'counsel-describe-variable)
-(global-set-key (kbd "<f1> o") 'counsel-describe-symbol)
-(global-set-key (kbd "<f1> l") 'counsel-find-library)
-(global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
-(global-set-key (kbd "<f2> u") 'counsel-unicode-char)
-(global-set-key (kbd "C-c g") 'counsel-git)
-(global-set-key (kbd "C-c j") 'counsel-git-grep)
-(global-set-key (kbd "C-c k") 'counsel-ag)
-(global-set-key (kbd "C-x l") 'counsel-locate)
-(global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
-(define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
 
-	     
 
 ;; PYTHON
-
-
-(require 'package)
-(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
 
 (setq python-shell-interpreter "/usr/bin/python3")
 
@@ -106,6 +94,16 @@
 (elpy-enable)
 (setq elpy-rpc-backend "jedi")
 (setq elpy-rpc-python-command "python3")
+
+
+
+;; COMMON LISP
+
+(load (expand-file-name "~/.quicklisp/slime-helper.el"))
+(setq inferior-lisp-program "sbcl")
+(add-to-list 'slime-contribs 'slime-repl)
+(add-hook 'emacs-lisp-mode-hook (lambda () (lispy-mode 1)))
+
 
 ;; HASKELL
 
@@ -123,18 +121,3 @@
 (define-key haskell-mode-map (kbd "C-c C-c") 'haskell-process-cabal-build)
 (define-key haskell-mode-map (kbd "C-c C-k") 'haskell-interactive-mode-clear)
 (define-key haskell-mode-map (kbd "C-c c") 'haskell-process-cabal)
-
-
-;; COMMON LISP
-
-(load (expand-file-name "~/quicklisp/slime-helper.el"))
-(setq inferior-lisp-program "sbcl")
-(add-to-list 'slime-contribs 'slime-repl)
-(add-hook 'emacs-lisp-mode-hook (lambda () (lispy-mode 1)))
-
-
-;; ORG MODE
-
-'(org-pretty-entities t)
-'(org-startup-indented t)
-
