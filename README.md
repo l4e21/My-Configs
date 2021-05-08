@@ -1,6 +1,9 @@
-# WMConfig
-My StumpWM config in Common Lisp, along with Compton Compositor config and emacs config and now with herbstluftWM configs. Everything is lisp! Or at least was.
+# Computer Configs
 
-Recent changes: 
--Added slack mouse policy for StumpWM and natural scrolling. 
--HerbstluftWM and panel configs added 
+Includes:
+  - Compositor configs (compton for ubuntu & picom for arch-based)
+  - WM configs (StumpWM, XMonad, QTile, HerbstluftWM
+  - Panel & autostart configs
+  
+To do:
+  - Add Tmux config
