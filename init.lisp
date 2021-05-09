@@ -92,9 +92,11 @@
   (only)
   (when (> (- (windownum) 1) 0)
     (hsplit "1/2")
+    (move-focus :right)
     (labels ((sortinglambda (windowleft)
 	       (when (> (- windowleft 2) 0)
 		 (vsplit (format nil "1/~a" (- windowleft 1)))
+		 (move-focus :down)
 		 (sortinglambda (- windowleft 1)))))
       (sortinglambda (windownum)))))
 
@@ -104,41 +106,37 @@
 ;; Fibonacci layout
 (defcommand spiral-splitter () ()
   (only)
-  (labels ((sortinglambda (windowleft)
-	     (if (> windowleft 4)
-		 (progn
-		   (hsplit "618/1000")
-		   (move-focus :right)
-		   (vsplit "618/1000")
-		   (move-focus :down)
-		   (hsplit "382/1000")
-		   (vsplit "382/1000")
-		   (sortinglambda (- windowleft 4)))
-		 (unless (= windowleft 0)
-		   (let ((remainder (mod windowleft 4)))
-		     (case remainder
-		       (1
-			(hsplit "618/1000")
-			(move-focus :right))
-		       (2
-			(hsplit "618/1000")
-			(move-focus :right)
-			(vsplit "618/1000")
-			(move-focus :down))
-		       (3
-			(hsplit "618/1000")
-			(move-focus :right)
-			(vsplit "618/1000")
-			(move-focus :down)
-			(hsplit "382/1000"))
-		       (0
-			(hsplit "618/1000")
-			(move-focus :right)
-			(vsplit "618/1000")
-			(move-focus :down)
-			(hsplit "382/1000")
-			(vsplit "382/1000"))))))))
+  (labels ((iter1 ()
+	     (hsplit "618/1000")
+	     (move-focus :right))
+	   (iter2 ()
+	     (iter1)
+	     (vsplit "618/1000")
+	     (move-focus :down))
+	   (iter3 ()
+	     (iter2)
+	     (hsplit "382/1000"))
+	   (iter4 ()
+	     (iter3)
+	     (vsplit "382/1000"))
+	   (sortinglambda (windowleft)
+		(if (> windowleft 3)
+		    (progn
+		      (iter4)
+		      (sortinglambda (- windowleft 4)))
+		    (unless (= windowleft 0)
+		      (let ((remainder (mod windowleft 4)))
+			(case remainder
+			  (1
+			   (iter1))
+			  (2
+			   (iter2))
+			  (3
+			   (iter3))
+			  (0
+			   nil)))))))
     (sortinglambda (- (windownum) 1))))
+
 
 (define-key *top-map* (kbd "s-.") "spiral-splitter")
 
