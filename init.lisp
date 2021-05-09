@@ -1,59 +1,39 @@
-;; -*-lisp-*-
-;;
-;; To configure stumpwm
-
-;; Paths and modules
-
 (in-package :stumpwm)
-(require 'swm-gaps)
+(set-module-dir "~/.stumpwm.d/modules")
+(load-module "stump-radio")
 (ql:quickload :swank)
 
-;; Link slime to stump, use prefix : (swank) to start the link
 
+
+;;
+;; Link slime to stump for live editing
+;;
+
+;; use prefix : (swank) to start the link and then follow the instructions at the bottom of the command
 (defcommand swank () ()
     (swank:create-server :port 4005
                        :style swank:*communication-style*
                        :dont-close t)
   (echo-string (current-screen) 
 	       "Starting swank. M-x slime-connect RET RET, then (in-package stumpwm)."))
-;rest
-;; Important commands to remember
-;; C-z ; quit (go back to desktop manager)
-;; C-z ; toggle-gaps-off (turn off gaps)
 
 
+;;
+;; Prefix and modmaps
+;;
 
-;; Header Gaps
-(setf swm-gaps:*head-gaps-size* 0)
-
-;; Inner Gaps
-(setf swm-gaps:*inner-gaps-size* 5)
-
-;; Outer Gaps
-(setf swm-gaps:*outer-gaps-size* 15)
-
-;; Call command
-;; toggle-gaps
-
-(swm-gaps:toggle-gaps-on)
-
-
-
-;; Change prefix key and add super_L to modmap
 (run-shell-command "xmodmap -e 'clear mod4'")
 (run-shell-command "xmodmap -e 'keycode 133 = Super_L'")
 (run-shell-command "xmodmap -e 'add mod4 = Super_L'")
 
-
 (set-prefix-key (kbd "C-z"))
 
-;; Group stuff, gnew to make, gkill to kill
-
-(define-key stumpwm:*root-map* (kbd "Super_L") "gnext")
 
 
-;; prompt the user for an interactive command. The first arg is an
-;; optional initial contents.
+;;
+;; prompt the user for an interactive command
+;;
+
 (defcommand colon1 (&optional (initial "")) (:rest)
   (let ((cmd (read-one-line (current-screen) ": " :initial-input initial)))
     (when cmd
@@ -61,40 +41,74 @@
 
 
 
-
-;;; Define window placement policy...
+;;
+;; Define window placement policy...
+;;
 
 ;; Clear rules
 (clear-window-placement-rules)
-
 ;; Last rule to match takes precedence!
 
 
 
+;;
+;; Groups and Workspaces
+;;
 
-;; Get volume
+(defcommand create-groups () ()
+  (loop for group in '("soc" "teams" "dev" "emacs" "games")
+	do (gnewbg group)))
 
+(defmacro defset-key-selector (name map com)
+  `(defcommand ,name () ()
+     (loop for x in '(1 2 3 4 5 6)
+	   do (define-key ,map (kbd (format nil "s-~a" x)) (format nil "~a ~a" ,com x)))))
+
+(defset-key-selector gselect-keys *top-map* 'gselect)
+(defset-key-selector gmove-keys *root-map* 'gmove)
+
+(grename "www")
+(create-groups)
+(gselect-keys)
+(gmove-keys)
+
+
+
+;;
+;; Volume
+;;
+
+;;For the modeline
 (defun getvolume ()
-  (run-shell-command "amixer get Master | grep 'Mono:' | awk -F'[][]' '{ print $2 }'" t))
+  (run-shell-command "amixer get Master | grep 'Front Left' | awk -F'[][]' '{ print $2 }'" t))
 
 (defun mutedp ()
-  (let ((command (run-shell-command "amixer get Master | grep 'Mono:' | awk -F'[][]' '{ print $6 }'" t)))
-    (subseq command 0 (1- (length command)))))
+  (let ((command (run-shell-command "amixer get Master | grep 'Front Left' | awk -F '[][]' '{ print $4 }'" t)))
+    (subseq command 1 (1- (length command)))))
 
 (defun maybemute (mutedp)
   (if (string= mutedp "off")
       "m"
       ""))
 
-  
 
+;;Volume keys (default sink because pulse is dumb and changes default sink if you toggle it too much
+(define-key *top-map* (kbd "F6") "exec pactl set-sink-volume @DEFAULT_SINK@ +5%")
+(define-key *top-map* (kbd "F5") "exec pactl set-sink-volume @DEFAULT_SINK@ -5%")
+(define-key *top-map* (kbd "F3") "exec pactl set-sink-mute @DEFAULT_SINK@ toggle")
+
+
+
+;;
 ;; Battery
+;;
 
+;; Modeline formatting
 (defun bat-zone-color (bat med crit)
       (cond ((>= bat med) 2)
 	    ((and (>= bat crit) (< bat med) 3))
 	    (t 1)))
-
+0
 (defun getbat ()
   (parse-integer (with-open-file (*standard-input* #p"/sys/class/power_supply/BAT0/capacity")(read-line))))
 
@@ -111,132 +125,8 @@
       "+"
       ""))
       
-  
-
 (defun formatted-bat ()
   (format nil "^~A ~D%" (check-battery2) (getbat)))
-
-
-
-;; Set mode-line format
-
-(setf *mode-line-foreground-color* "#90a7ff")
-(setf *mode-line-background-color* "#38394c")
-
-(setf *screen-mode-line-format*
-      (list "%g | %v | ^>"
-	    "%d  "
-	    "[Vol: " 
-	    '(:eval (string-trim '(#\newline) (getvolume)))
-	    '(:eval (string-trim '(#\newline) (maybemute (mutedp))))
-            "]"
-	    "  [Signal: %I]"
-	    "  [Life:"
-	    '(:eval (string-trim '(#\newline) (formatted-bat)))
-	    "^]]"
-	    '(:eval (string-trim '(#\newline) (maybecharge (chargingquery))))
-	    ))
-
-
-(setf *mode-line-timeout* 1)
-
-(toggle-mode-line (current-screen)
-        (current-head))
-
-(setf *window-format* "%m%n%s%c")
-
-(setf *hidden-window-color* "^7")
-
-(setf *wifi-modeline-fmt* "%p")
-
-
-
-
-
-
-;; Background apps to run on startup
-(run-shell-command "feh --bg-center $HOME/Pictures/0019.jpg")
-;;(run-shell-command "discord")
-;;(run-shell-command "hexchat")
-;;(run-shell-command "spotify")
-;;(run-shell-command "firefox")
-(run-shell-command "guake")
-
-;;(run-shell-command "xterm -e fish -c \"curl http://wttr.in && sleep 30\"")
-
-;; Mouse speed alteration for super fast mouse and natural scrolling
-(run-shell-command "xinput --set-prop 11 'Device Accel Velocity Scaling' 4")
-(run-shell-command "xinput --set-prop 11 'Device Accel Constant Deceleration' 0.6")
-(run-shell-command "xinput --set-prop 11 'Synaptics Scrolling Distance' -60 -60")
-(run-shell-command "xinput --set-prop 12 'Device Accel Velocity Scaling' 4")
-(run-shell-command "xinput --set-prop 12 'Device Accel Constant Deceleration' 0.6")
-(run-shell-command "xinput --set-prop 12 'Synaptics Scrolling Distance' -60 -60")
-
-;; Mouse policy sloppy
-(setf *mouse-focus-policy* :sloppy)
-
-;;Message & Input Bar
-
-(set-fg-color "#90a7ff")
-(set-bg-color "#21252b")
-(set-border-color "#21252b")
-(set-win-bg-color "#21252b")
-(set-focus-color "#61afef")
-(set-unfocus-color "#21252b")
-(setf *maxsize-border-width* 1)
-(setf *transient-border-width* 1)
-(setf *normal-border-width* 1)
-(set-msg-border-width 10)
-(setf *window-border-style* :thin)
-(setf *message-window-gravity* :bottom-right)
-(setf *message-window-input-gravity* :bottom-right)
-(setf *input-window-gravity* :bottom-right)
-
-
-
-;;Volume keys (default sink because pulse is dumb and changes default sink if you toggle it too much
-(define-key *top-map* (kbd "XF86AudioRaiseVolume") "exec pactl set-sink-volume @DEFAULT_SINK@ +5%")
-(define-key *top-map* (kbd "XF86AudioLowerVolume") "exec pactl set-sink-volume @DEFAULT_SINK@ -5%")
-(define-key *top-map* (kbd "XF86AudioMute") "exec pactl set-sink-mute @DEFAULT_SINK@ toggle")
-
-    
-;; Backlight controls
-(define-key *top-map* (kbd "XF86MonBrightnessUp") "exec xbacklight -inc 5")
-(define-key *top-map* (kbd "XF86MonBrightnessDown") "exec xbacklight -dec 5")
-
-;;Screenshooter
-(define-key *top-map*(kbd "SunPrint_Screen") "exec xfce4-screenshooter")
-
-
-;;Super based shortcuts for specific applications
-(define-key *top-map* (kbd "s-t") "exec thunar") 
-(define-key *top-map* (kbd "s-f") "exec firefox")
-(define-key *top-map* (kbd "s-d") "exec discord")
-(define-key *top-map* (kbd "s-x") "exec xterm")
-
-
-;;Hide windows that aren't on top of the stack (for compositor; also the command requires execution)
-
-
-(defun hide-all-lower-windows (current last)
-  (declare (ignore current last))
-  (when (typep (current-group) 'stumpwm::tile-group)
-    (mapc (lambda (win)
-	    (unless (eq win (stumpwm::frame-window
-			     (stumpwm::window-frame win)))
-	      (stumpwm::hide-window win)))
-	  (group-windows (current-group)))))
-
-(defcommand enable-hiding-lower-windows () ()
-	    "Enables hiding lower windows obviously"
-	    (add-hook *focus-window-hook* 'hide-all-lower-windows))
-
-(enable-hiding-lower-windows)
-(run-shell-command "compton --config ~/.config/compton.conf")
-
-
-
-
 
 
 
@@ -355,3 +245,130 @@ is found, just displays nil."
 ;;; Add mode-line formatter
 
 (add-screen-mode-line-formatter #\I #'fmt-wifi)
+
+
+
+;;
+;; Format the modeline
+;;
+
+(setf *mode-line-foreground-color* "#66b2b2")
+(setf *mode-line-background-color* "#444444")
+
+(setf *screen-mode-line-format*
+      (list "|| %g || %v || ^>"
+	    "%d  "
+	    "[Vol: " 
+	    '(:eval (string-trim '(#\newline) (getvolume)))
+	    '(:eval (string-trim '(#\newline) (maybemute (mutedp))))
+            "]"
+	    "  [Signal: %I]"
+	    "  [Life:"
+	    '(:eval (string-trim '(#\newline) (formatted-bat)))
+	    "^]]"
+	    '(:eval (string-trim '(#\newline) (maybecharge (chargingquery))))
+	    ))
+
+
+(setf *mode-line-timeout* 1)
+
+(toggle-mode-line (current-screen)
+        (current-head))
+
+(setf *window-format* "%m%n%s%c")
+
+(setf *hidden-window-color* "^7")
+
+(setf *wifi-modeline-fmt* "%p")
+
+
+
+;;
+;;Message & Input Bar
+;;
+
+(set-fg-color "#66b2b2")
+(set-bg-color "#444444")
+(set-border-color "#444444")
+(set-win-bg-color "#21252b")
+(set-focus-color "#66b2b2")
+(set-unfocus-color "#21252b")
+(setf *maxsize-border-width* 1)
+(setf *transient-border-width* 1)
+(setf *normal-border-width* 1)
+(set-msg-border-width 10)
+(setf *window-border-style* :thin)
+(setf *message-window-gravity* :bottom-right)
+(setf *message-window-input-gravity* :bottom-right)
+(setf *input-window-gravity* :bottom-right)
+
+
+
+;;
+;; Compositor
+;;
+
+
+(defun hide-all-lower-windows (current last)
+  (declare (ignore current last))
+  (when (typep (current-group) 'stumpwm::tile-group)
+    (mapc (lambda (win)
+	    (unless (eq win (stumpwm::frame-window
+			     (stumpwm::window-frame win)))
+	      (stumpwm::hide-window win)))
+	  (group-windows (current-group)))))
+
+(defcommand enable-hiding-lower-windows () ()
+	    "Enables hiding lower windows obviously"
+	    (add-hook *focus-window-hook* 'hide-all-lower-windows))
+
+(enable-hiding-lower-windows)
+
+(run-shell-command "picom &")
+
+
+
+;;
+;; Mouse 
+;;
+
+(setf *mouse-focus-policy* :sloppy)
+
+
+
+;;
+;; Misc Key Definitions
+;;
+    
+;; Backlight controls
+(define-key *top-map* (kbd "F9") "exec xbacklight -inc 5")
+(define-key *top-map* (kbd "F8") "exec xbacklight -dec 5")
+
+;; Screenshooter
+(define-key *top-map* (kbd "SunPrint_Screen") "exec xfce4-screenshooter")
+
+;;Super based shortcuts for specific applications
+(define-key *top-map* (kbd "s-t") "exec dolphin") 
+(define-key *top-map* (kbd "s-f") "exec firefox")
+(define-key *top-map* (kbd "s-d") "exec discord")
+(define-key *top-map* (kbd "s-x") "exec konsole -e tmux")
+
+
+
+;;
+;; Misc background programs to run on startup
+;;
+
+(run-shell-command "feh --bg-scale ~/Pictures/wallpaper2.jpg")
+
+
+
+;;
+;; Radio
+;;
+
+(define-key *top-map* (kbd "F7") "radio-start")
+(define-key *top-map* (kbd "s-F7") "radio-stop")
+(define-key *root-map* (kbd "s-n") "radio-next-station")
+(define-key *root-map* (kbd "s-p") "radio-previous-station")
+
