@@ -1,6 +1,7 @@
 (in-package :stumpwm)
 (set-module-dir "~/.stumpwm.d/modules")
 (load-module "stump-radio")
+(load-module "swm-gaps")
 (ql:quickload :swank)
 
 
@@ -25,7 +26,7 @@
 (run-shell-command "xmodmap -e 'keycode 133 = Super_L'")
 (run-shell-command "xmodmap -e 'add mod4 = Super_L'")
 
-(set-prefix-key (kbd "C-z"))
+(set-prefix-key (kbd "C-a"))
 
 
 
@@ -51,29 +52,60 @@
 
 
 ;;
-;; Groups and Workspaces
+;; Groups, Windows, and Workspaces
 ;;
 
+;; Create groups
 (defcommand create-groups () ()
   (loop for group in '("soc" "teams" "dev" "emacs" "games")
 	do
-	   (if (string= group "steam")
-	       (gnewbg-float group)
-	       (gnewbg group))))
-
-(defmacro defset-key-selector (name map com)
-  `(defcommand ,name () ()
-     (loop for x in '(1 2 3 4 5 6)
-	   do (define-key ,map (kbd (format nil "s-~a" x)) (format nil "~a ~a" ,com x)))))
-
-(defset-key-selector gselect-keys *top-map* 'gselect)
-(defset-key-selector gmove-keys *root-map* 'gmove)
+	   (gnewbg group)))
 
 (grename "www")
 (create-groups)
+
+;; New navigation keys
+
+(defmacro defset-key-selector (name map pref com suflist)
+  ;; Suffix must be the same as command modifier 
+  `(defcommand ,name () ()
+     (loop for x in ,suflist
+	   do (define-key ,map (kbd (format nil "~a-~a" ,pref x)) (format nil "~a ~a" ,com x)))))
+
+
+
+
+(defset-key-selector gselect-keys *top-map* "s" 'gselect '(1 2 3 4 5 6))
+(defset-key-selector gmove-keys *root-map* "s" 'gmove '(1 2 3 4 5 6))
+
+(defset-key-selector movefocus-keys *top-map* "s" 'move-focus '("Left" "Right" "Up" "Down"))
+(defset-key-selector exchange-keys *top-map* "s-S" 'exchange-direction '("Left" "Right" "Up" "Down"))
+
 (gselect-keys)
 (gmove-keys)
+(movefocus-keys)
+(exchange-keys)
 
+;; MonadTall frame structure from solo
+(defcommand explode () ()
+  (progn 
+   (hsplit "2/3")
+   (move-focus :right)
+   (vsplit)
+   (move-focus :left)))
+
+(define-key *top-map* (kbd "s-SPC") "explode")
+
+;;Just for fun
+(defcommand spiral-splitter () ()
+  (dolist (i '(1 2))
+   (progn
+     (hsplit "618/1000")
+     (move-focus :right)
+     (vsplit "618/1000")
+     (move-focus :down)
+     (hsplit "382/1000")
+     (vsplit "382/1000"))))
 
 
 ;;
@@ -95,6 +127,7 @@
 
 
 ;;Volume keys (default sink because pulse is dumb and changes default sink if you toggle it too much
+
 (define-key *top-map* (kbd "F6") "exec pactl set-sink-volume @DEFAULT_SINK@ +5%")
 (define-key *top-map* (kbd "F5") "exec pactl set-sink-volume @DEFAULT_SINK@ -5%")
 (define-key *top-map* (kbd "F3") "exec pactl set-sink-mute @DEFAULT_SINK@ toggle")
@@ -255,9 +288,9 @@ is found, just displays nil."
 ;;
 
 ;; (setf *mode-line-foreground-color* "#33bb5e")
-(setf *mode-line-foreground-color* "#66b2b2")
-;; (setf *mode-line-background-color* "#444444")
-(setf *mode-line-background-color* "#101010")
+(setf *mode-line-foreground-color* "#00ba9b")
+ (setf *mode-line-background-color* "#444444")
+;; (setf *mode-line-background-color* "#101010")
 
 (setf *screen-mode-line-format*
       (list "|| %g || %v || ^>"
@@ -292,20 +325,38 @@ is found, just displays nil."
 ;;
 
 ;; (set-fg-color "#33bb5e")
-(set-fg-color "#66b2b2")
+(set-fg-color "#00ba9b")
 (set-bg-color "#444444")
 (set-border-color "#444444")
 (set-win-bg-color "#21252b")
-(set-focus-color "#66b2b2")
-(set-unfocus-color "#21252b")
-(setf *maxsize-border-width* 1)
-(setf *transient-border-width* 1)
-(setf *normal-border-width* 1)
+(set-focus-color "#00ba9b")
+(set-unfocus-color "#444444")
+(setf *maxsize-border-width* 9)
+(setf *transient-border-width* 9)
+(setf *normal-border-width* 9)
 (set-msg-border-width 10)
 (setf *window-border-style* :thin)
 (setf *message-window-gravity* :bottom-right)
 (setf *message-window-input-gravity* :bottom-right)
 (setf *input-window-gravity* :bottom-right)
+
+
+
+;;
+;; Gaps
+;;
+
+;; Head gaps run along the 4 borders of the monitor(s)
+(setf swm-gaps:*head-gaps-size* 0)
+
+;; Inner gaps run along all the 4 borders of a window
+(setf swm-gaps:*inner-gaps-size* 25)
+
+;; Outer gaps add more padding to the outermost borders of a window (touching
+;; the screen border)
+(setf swm-gaps:*outer-gaps-size* 34)
+
+;; (toggle-gaps-on)
 
 
 
@@ -356,10 +407,19 @@ is found, just displays nil."
 (define-key *top-map* (kbd "s-t") "exec dolphin") 
 (define-key *top-map* (kbd "s-f") "exec firefox")
 (define-key *top-map* (kbd "s-d") "exec discord")
-(define-key *top-map* (kbd "s-x") "exec konsole -e tmux")
+(define-key *top-map* (kbd "s-n") "exec nyxt")
 
+;; Some essentials
+(define-key *top-map* (kbd "C-RET") "exec konsole -e tmux")
+(define-key *top-map* (kbd "s-RET") "exec konsole -e tmux")
+(define-key *top-map* (kbd "C-k") "kill")
+(define-key *top-map* (kbd "s-k") "kill")
+(define-key *top-map* (kbd "s-x") "kill")
 
+;; Reload stump
 
+(define-key *root-map* (kbd "M-r") "restart-hard")
+(define-key *top-map* (kbd "s-r") "restart-hard")
 ;;
 ;; Window Preferences
 ;;
