@@ -55,6 +55,10 @@
 ;; Groups, Windows, and Workspaces
 ;;
 
+;; Returns the number of windows in a group
+(defun windownum ()
+  (length (group-windows (current-group)))) 
+
 ;; Create groups
 (defcommand create-groups () ()
   (loop for group in '("soc" "teams" "dev" "emacs" "games")
@@ -72,9 +76,6 @@
      (loop for x in ,suflist
 	   do (define-key ,map (kbd (format nil "~a-~a" ,pref x)) (format nil "~a ~a" ,com x)))))
 
-
-
-
 (defset-key-selector gselect-keys *top-map* "s" 'gselect '(1 2 3 4 5 6))
 (defset-key-selector gmove-keys *root-map* "s" 'gmove '(1 2 3 4 5 6))
 
@@ -87,32 +88,68 @@
 (exchange-keys)
 
 ;; MonadTall frame structure from solo
-(defcommand explode () ()
-  (progn 
-   (hsplit "2/3")
-   (move-focus :right)
-   (vsplit)
-   (move-focus :left)))
+(defcommand monadtall () ()
+  (only)
+  (when (> (- (windownum) 1) 0)
+    (hsplit "1/2")
+    (labels ((sortinglambda (windowleft)
+	       (when (> (- windowleft 2) 0)
+		 (vsplit (format nil "1/~a" (- windowleft 1)))
+		 (sortinglambda (- windowleft 1)))))
+      (sortinglambda (windownum)))))
 
-(define-key *top-map* (kbd "s-SPC") "explode")
 
-;;Just for fun
+(define-key *top-map* (kbd "s-SPC") "monadtall")
+
+;; Fibonacci layout
 (defcommand spiral-splitter () ()
-  (dolist (i '(1 2))
-   (progn
-     (hsplit "618/1000")
-     (move-focus :right)
-     (vsplit "618/1000")
-     (move-focus :down)
-     (hsplit "382/1000")
-     (vsplit "382/1000"))))
+  (only)
+  (labels ((sortinglambda (windowleft)
+	     (if (> windowleft 4)
+		 (progn
+		   (hsplit "618/1000")
+		   (move-focus :right)
+		   (vsplit "618/1000")
+		   (move-focus :down)
+		   (hsplit "382/1000")
+		   (vsplit "382/1000")
+		   (sortinglambda (- windowleft 4)))
+		 (unless (= windowleft 0)
+		   (let ((remainder (mod windowleft 4)))
+		     (case remainder
+		       (1
+			(hsplit "618/1000")
+			(move-focus :right))
+		       (2
+			(hsplit "618/1000")
+			(move-focus :right)
+			(vsplit "618/1000")
+			(move-focus :down))
+		       (3
+			(hsplit "618/1000")
+			(move-focus :right)
+			(vsplit "618/1000")
+			(move-focus :down)
+			(hsplit "382/1000"))
+		       (0
+			(hsplit "618/1000")
+			(move-focus :right)
+			(vsplit "618/1000")
+			(move-focus :down)
+			(hsplit "382/1000")
+			(vsplit "382/1000"))))))))
+    (sortinglambda (- (windownum) 1))))
+
+(define-key *top-map* (kbd "s-.") "spiral-splitter")
 
 
-;;
-;; Volume
-;;
 
-;;For the modeline
+  ;;
+  ;; Volume
+  ;;
+
+  ;;For the modeline
+
 (defun getvolume ()
   (run-shell-command "amixer get Master | grep 'Front Left' | awk -F'[][]' '{ print $2 }'" t))
 
