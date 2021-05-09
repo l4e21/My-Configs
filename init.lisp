@@ -4,7 +4,6 @@
 (ql:quickload :swank)
 
 
-
 ;;
 ;; Link slime to stump for live editing
 ;;
@@ -57,7 +56,10 @@
 
 (defcommand create-groups () ()
   (loop for group in '("soc" "teams" "dev" "emacs" "games")
-	do (gnewbg group)))
+	do
+	   (if (string= group "steam")
+	       (gnewbg-float group)
+	       (gnewbg group))))
 
 (defmacro defset-key-selector (name map com)
   `(defcommand ,name () ()
@@ -252,8 +254,10 @@ is found, just displays nil."
 ;; Format the modeline
 ;;
 
+;; (setf *mode-line-foreground-color* "#33bb5e")
 (setf *mode-line-foreground-color* "#66b2b2")
-(setf *mode-line-background-color* "#444444")
+;; (setf *mode-line-background-color* "#444444")
+(setf *mode-line-background-color* "#101010")
 
 (setf *screen-mode-line-format*
       (list "|| %g || %v || ^>"
@@ -287,6 +291,7 @@ is found, just displays nil."
 ;;Message & Input Bar
 ;;
 
+;; (set-fg-color "#33bb5e")
 (set-fg-color "#66b2b2")
 (set-bg-color "#444444")
 (set-border-color "#444444")
@@ -356,10 +361,31 @@ is found, just displays nil."
 
 
 ;;
+;; Window Preferences
+;;
+
+(define-frame-preference "soc"
+  (0 t t :class "discord"))
+
+(define-frame-preference "teams"
+  (0 t t :class "teams"))
+
+(define-frame-preference "dev"
+  (0 t t :class "pycharm"))
+
+(define-frame-preference "emacs"
+  (0 t t :class "Emacs"))
+
+(define-frame-preference "games"
+  (0 t t :class "Steam"))
+
+
+
+;;
 ;; Misc background programs to run on startup
 ;;
 
-(run-shell-command "feh --bg-scale ~/Pictures/wallpaper2.jpg")
+(run-shell-command "feh --bg-scale ~/Pictures/synth.jpg")
 
 
 
