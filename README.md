@@ -6,9 +6,9 @@
 # Computer Configs
 
 Includes:
-  - Compositor configs (compton for ubuntu & picom for arch-based)
-  - WM configs (StumpWM, XMonad, QTile, HerbstluftWM
-  - Panel & autostart configs
+  - Compositor configs
+  - WM configs (StumpWM, XMonad)
   
 To do:
   - Add Tmux config
+  - Add Nyxt config
