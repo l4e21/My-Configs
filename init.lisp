@@ -6,10 +6,13 @@
 
 
 ;;
-;; Link slime to stump for live editing
+;; Debugging
 ;;
 
-;; use prefix : (swank) to start the link and then follow the instructions at the bottom of the command
+;; Make stumpm handle errors better
+(setf stumpwm:*top-level-error-action* :break)
+
+;; Use this command and follow the instructions to live-edit Stump
 (defcommand swank () ()
     (swank:create-server :port 4005
                        :style swank:*communication-style*
@@ -74,20 +77,29 @@
   ;; Suffix must be the same as command modifier 
   `(defcommand ,name () ()
      (loop for x in ,suflist
-	   do (define-key ,map (kbd (format nil "~a-~a" ,pref x)) (format nil "~a ~a" ,com x)))))
+	   do (define-key ,map (kbd (format nil "~a~a" ,pref x)) (format nil "~a ~a" ,com x)))))
 
-(defset-key-selector gselect-keys *top-map* "s" 'gselect '(1 2 3 4 5 6))
-(defset-key-selector gmove-keys *root-map* "s" 'gmove '(1 2 3 4 5 6))
+;; Group selection and movement
+(defset-key-selector gselect-keys *root-map* "" 'gselect '(1 2 3 4 5 6))
+(defset-key-selector gmove-keys *root-map* "s-" 'gmove '(1 2 3 4 5 6))
 
-(defset-key-selector movefocus-keys *top-map* "s" 'move-focus '("Left" "Right" "Up" "Down"))
-(defset-key-selector exchange-keys *top-map* "s-S" 'exchange-direction '("Left" "Right" "Up" "Down"))
+;; Switch to tab
+(defset-key-selector selectwindow-keys *top-map* "s-" 'select-window-by-number '(1 2 3 4 5 6 7 8 9 0))
+
+;; Focus keys and switching windows between frames
+(defset-key-selector movefocus-keys *top-map* "s-" 'move-focus '("Left" "Right" "Up" "Down"))
+(defset-key-selector exchange-keys *top-map* "s-S-" 'exchange-direction '("Left" "Right" "Up" "Down"))
 
 (gselect-keys)
 (gmove-keys)
+(selectwindow-keys)
 (movefocus-keys)
 (exchange-keys)
 
-;; MonadTall frame structure from solo
+;; Only keybinding
+(define-key *top-map* (kbd "s-q") "only")
+
+;; MonadTall layout
 (defcommand monadtall () ()
   (only)
   (when (> (- (windownum) 1) 0)
@@ -140,11 +152,55 @@
 
 (define-key *top-map* (kbd "s-.") "spiral-splitter")
 
+;; Equality layout
+(defun numcols (win_num)
+  (multiple-value-bind (c l) (round (sqrt win_num))
+    (cond ((and (<  l 0.5) (> l 0.01))
+	   (+ 1 c))
+	  (t c))))
+
+;; If we can add another column to make things neater, we ought to!
+(defun addifp (win_num)
+  (let ((numcolplus (+ 1 (numcols win_num))))
+    (if (= 0 (mod win_num numcolplus))
+	numcolplus
+	(numcols win_num))))
+
+;; Basic number of rows
+(defun numrowsnorm (win_num)
+  (multiple-value-bind (r l) (floor win_num (addifp win_num))
+    r))
+
+;; Leftover rows
+(defun lastcol-rows (win_num)
+  (let ((basicamount (* (numrowsnorm win_num) (addifp win_num))))
+    (+ (- win_num basicamount) (numrowsnorm win_num)))) 
+
+;; The command
+(defcommand equalityplane () ()
+  (only)
+  (labels ((splitrows (acc)
+	     (when (> acc 1)
+		 (vsplit (format nil "1/~a" acc))
+		 (move-focus :down)
+		 (splitrows (- acc 1))))
+	   (splitcols (acc1 acc2) 
+	     (when (> acc1 1)
+	       (hsplit (format nil "1/~a" acc1))
+	       (splitrows acc2)
+	       (move-focus :right)
+	       (splitcols (- acc1 1) acc2)))
+	   )
+    (splitcols (addifp (windownum)) (numrowsnorm (windownum)))
+    (splitrows (lastcol-rows (windownum)))))
+
+(define-key *top-map* (kbd "s-,") "equalityplane")
 
 
-  ;;
-  ;; Volume
-  ;;
+
+;;
+;; Volume
+;;
 
   ;;For the modeline
 
