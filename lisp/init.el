@@ -17,7 +17,7 @@
    '("b0334e8e314ea69f745eabbb5c1817a173f5e9715493d63b592a8dc9c19a4de6" default))
  '(global-display-line-numbers-mode t)
  '(package-selected-packages
-   '(adjust-parens paredit nyan-mode rainbow-delimiters slime ivy elpy restart-emacs ivy-explorer doom-themes doom-modeline lispy rust-mode haskell-mode isortify anaconda-mode auto-virtualenv jedi format-all python-mode python))
+   '(projectile wgrep adjust-parens paredit nyan-mode rainbow-delimiters slime ivy elpy restart-emacs ivy-explorer doom-themes doom-modeline lispy rust-mode haskell-mode isortify anaconda-mode auto-virtualenv jedi format-all python-mode python))
  '(send-mail-function 'mailclient-send-it)
  '(show-paren-mode t))
 (custom-set-faces
@@ -41,18 +41,34 @@
 
 (line-number-mode 1)
 (column-number-mode 1)
-(set-frame-font "Inconsolata 12" nil t)
+(set-frame-font "Inconsolata 11" nil t)
 
 ;; Melpa
 
-(require 'package)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
 
 
-;; Now install the necessary files and then uncomment the rest
+;; Auto-package installation!
+(package-refresh-contents)
+(defvar packagelist
+  '(nyan-mode
+    doom-modeline
+    doom-themes
+    ivy
+    slime
+    elpy
+    wgrep
+    haskell-mode
+    ))
+
+(mapcar (lambda (package)
+	  (unless (package-installed-p package)
+	    (package-install package)))
+	packagelist)
 
 
 ;;MODELINE
+
 
 (require 'doom-modeline)
 (require 'nyan-mode)
@@ -89,21 +105,32 @@
 (add-hook 'lisp-interaction-mode-hook 'enable-paredit-mode)
 (add-hook 'scheme-mode-hook           'enable-paredit-mode)
 
+
+
 ;; PYTHON
+;; rgrep to search for keywords in directories, good for finding duplicates
+;; C-c C-e to refactor all in a file
+;; M-x set-project root to set a project root
+;; M-x project-find-file or (C-c C-f) to find a file in a project
+;; Select multiple lines and do M-; to comment out multiple lines at a time
+;; C-c > and C-c < to insert or reduce tabs for multiple lines at a time
 
+(require 'wgrep)
 (setq python-shell-interpreter "/usr/bin/python3")
-
-(defvar myPackages
-  '(better-defaults
-    exec-path-from-shell
-    elpy
-    pyenv-mode))
-
+(add-hook 'python-mode-hook 'elpy-mode)
 
 (elpy-enable)
 (setq elpy-rpc-backend "jedi")
 (setq elpy-rpc-python-command "python3")
 
+(add-hook 'elpy-mode-hook (lambda ()
+			    (add-hook 'before-save-hook
+				      'elpy-format-code nil t)))
+
+(setq python-check-command "flake8")
+
+(add-hook 'elpy-mode-hook (lambda ()
+			    (add-hook focus-out-hook 'save-buffer)))
 
 ;; COMMON LISP
 
@@ -111,11 +138,12 @@
 (setq inferior-lisp-program "sbcl")
 (add-to-list 'slime-contribs 'slime-repl)
 (add-hook 'emacs-lisp-mode-hook (lambda () (lispy-mode 1)))
+(add-hook 'lisp-mode-hook (lambda () (lispy-mode 1)))
+
 
 
 ;; HASKELL
 
-(add-hook 'python-mode-hook 'anaconda-mode)
 
 (require 'haskell-interactive-mode)
 (require 'haskell-process)
