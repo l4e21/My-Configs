@@ -3,18 +3,23 @@
 (load-module "stump-radio")
 (load-module "swm-gaps")
 (ql:quickload :swank)
-
+(require :inferior-shell)
 
 ;;
 ;; Debugging
 ;;
 
 ;; Make stumpm handle errors better
+(add-hook *top-level-error-hook* (lambda ()
+				   (quit)))
+
 (setf stumpwm:*top-level-error-action* :break)
+
+
 
 ;; Use this command and follow the instructions to live-edit Stump
 (defcommand swank () ()
-    (swank:create-server :port 4005
+  (swank:create-server :port 4005
                        :style swank:*communication-style*
                        :dont-close t)
   (echo-string (current-screen) 
@@ -93,6 +98,10 @@
 (define-key *top-map* (kbd "s-k") "move-focus Up")
 (define-key *top-map* (kbd "s-l") "move-focus Right")
 (defset-key-selector exchange-keys *top-map* "s-S-" 'exchange-direction '("Left" "Right" "Up" "Down"))
+(define-key *top-map* (kbd "s-S-h") "move-focus Left")
+(define-key *top-map* (kbd "s-S-j") "move-focus Down")
+(define-key *top-map* (kbd "s-S-k") "move-focus Up")
+(define-key *top-map* (kbd "s-S-l") "move-focus Right")
 
 (gselect-keys)
 (gmove-keys)
@@ -117,7 +126,7 @@
       (sortinglambda (windownum)))))
 
 
-(define-key *top-map* (kbd "s-.") "monadtall")
+(define-key *top-map* (kbd "s-m") "monadtall")
 
 ;; Fibonacci layout
 (defcommand spiral-splitter () ()
@@ -503,6 +512,8 @@ is found, just displays nil."
 (define-key *top-map* (kbd "s-f") "exec firefox")
 (define-key *top-map* (kbd "s-d") "exec discord")
 (define-key *top-map* (kbd "s-n") "exec nyxt")
+(define-key *top-map* (kbd "s-e") "exec (emacsclient -c -e \"(eshell)\")")
+(define-key *root-map* (kbd "e") "eval (run-or-raise \"emacs\" '(:class \"Emacs\"))")
 
 ;; Some essentials
 (define-key *top-map* (kbd "C-RET") "exec konsole -e tmux")
@@ -518,17 +529,11 @@ is found, just displays nil."
 ;; Window Preferences
 ;;
 
-(define-frame-preference "soc"
-  (0 t t :class "discord"))
-
 (define-frame-preference "teams"
   (0 t t :class "teams"))
 
 (define-frame-preference "dev"
-  (0 t t :class "pycharm"))
-
-(define-frame-preference "emacs"
-  (0 t t :class "Emacs"))
+    (0 t t :class "pycharm"))
 
 (define-frame-preference "games"
   (0 t t :class "Steam"))
@@ -536,13 +541,12 @@ is found, just displays nil."
 
 
 ;;
-;; Misc background programs to run on startup
+;; To run on startup
 ;;
 
 (run-shell-command "feh --bg-scale ~/Pictures/synth.jpg")
-
-
-
+(run-shell-command "emacs")
+(gmove 5)
 ;;
 ;; Radio
 ;;
