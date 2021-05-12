@@ -17,7 +17,7 @@
    '("b0334e8e314ea69f745eabbb5c1817a173f5e9715493d63b592a8dc9c19a4de6" default))
  '(global-display-line-numbers-mode t)
  '(package-selected-packages
-   '(projectile wgrep adjust-parens paredit nyan-mode rainbow-delimiters slime ivy elpy restart-emacs ivy-explorer doom-themes doom-modeline lispy rust-mode haskell-mode isortify anaconda-mode auto-virtualenv jedi format-all python-mode python))
+   '(python-black projectile wgrep adjust-parens paredit nyan-mode rainbow-delimiters slime ivy elpy restart-emacs ivy-explorer doom-themes doom-modeline lispy rust-mode haskell-mode isortify anaconda-mode auto-virtualenv jedi format-all python-mode python))
  '(send-mail-function 'mailclient-send-it)
  '(show-paren-mode t))
 (custom-set-faces
@@ -37,11 +37,13 @@
     (scroll-bar-mode -1))
 (setq inhibit-startup-screen t)
 (setq initial-scratch-message nil)
-(setq initial-major-mode 'org-mode)
 
-(line-number-mode 1)
-(column-number-mode 1)
+(line-number-mode nil)
+(column-number-mode nil)
 (set-frame-font "Inconsolata 11" nil t)
+
+ ;; Start a server upon startup
+(server-start)
 
 ;; Melpa
 
@@ -49,7 +51,7 @@
 
 
 ;; Auto-package installation!
-(package-refresh-contents)
+
 (defvar packagelist
   '(nyan-mode
     doom-modeline
@@ -103,7 +105,6 @@
 (add-hook 'ielm-mode-hook             'enable-paredit-mode)
 (add-hook 'lisp-mode-hook             'enable-paredit-mode)
 (add-hook 'lisp-interaction-mode-hook 'enable-paredit-mode)
-(add-hook 'scheme-mode-hook           'enable-paredit-mode)
 
 
 
@@ -124,15 +125,14 @@
 (setq elpy-rpc-python-command "python3")
 
 (add-hook 'elpy-mode-hook (lambda ()
-			    (add-hook 'before-save-hook
-				      'elpy-format-code nil t)))
+			    (add-hook 'before-save-hook 'python-black-buffer)))
 
-(setq python-check-command "flake8")
 
-(add-hook 'elpy-mode-hook (lambda ()
-			    (add-hook focus-out-hook 'save-buffer)))
+;; (add-hook 'elpy-mode-hook (lambda ()
+;; 			    (add-hook 'focus-out-hook 'save-buffer)))
 
 ;; COMMON LISP
+
 
 (load (expand-file-name "~/.quicklisp/slime-helper.el"))
 (setq inferior-lisp-program "sbcl")
@@ -140,6 +140,13 @@
 (add-hook 'emacs-lisp-mode-hook (lambda () (lispy-mode 1)))
 (add-hook 'lisp-mode-hook (lambda () (lispy-mode 1)))
 
+
+;; INFERIOR SHELL
+
+(setq-default explicit-shell-file-name "/bin/bash")
+(add-hook 'after-init-hook (lambda ()
+			     (shell)
+			     (delete-other-windows)))
 
 
 ;; HASKELL
