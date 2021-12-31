@@ -1,11 +1,13 @@
 (in-package :stumpwm)
 (set-module-dir "~/.stumpwm.d/modules")
-(load-module "stump-radio")
+;; (load-module "cl-shell")
+;; (use-package 'cl-shell)
+;; (load-module "stump-radio")
 (load-module "swm-gaps")
-(ql:quickload :swank)
-(require :inferior-shell)
+(require 'swank)
+(require 'bt-semaphore)
 
-;;
+
 ;; Debugging
 ;;
 
@@ -17,13 +19,19 @@
 
 
 
-;; Use this command and follow the instructions to live-edit Stump
-(defcommand swank () ()
+;; ;; Use this command and follow the instructions to live-edit Stump
+(defcommand swank-start () ()
   (swank:create-server :port 4005
                        :style swank:*communication-style*
                        :dont-close t)
   (echo-string (current-screen) 
 	       "Starting swank. M-x slime-connect RET RET, then (in-package stumpwm)."))
+
+(swank-start)                           ;Requires multithreading to be active
+
+;;
+;; Shell setup
+;; 
 
 
 ;;
@@ -59,9 +67,9 @@
 
 
 
-;;
+
 ;; Groups, Windows, and Workspaces
-;;
+
 
 ;; Returns the number of windows in a group
 (defun windownum ()
@@ -69,7 +77,7 @@
 
 ;; Create groups
 (defcommand create-groups () ()
-  (loop for group in '("soc" "teams" "dev" "emacs" "games")
+  (loop for group in '("soc" "teams" "dev" "emacs" "misc")
 	do
 	   (gnewbg group)))
 
@@ -98,10 +106,16 @@
 (define-key *top-map* (kbd "s-k") "move-focus Up")
 (define-key *top-map* (kbd "s-l") "move-focus Right")
 (defset-key-selector exchange-keys *top-map* "s-S-" 'exchange-direction '("Left" "Right" "Up" "Down"))
-(define-key *top-map* (kbd "s-S-h") "move-focus Left")
-(define-key *top-map* (kbd "s-S-j") "move-focus Down")
-(define-key *top-map* (kbd "s-S-k") "move-focus Up")
-(define-key *top-map* (kbd "s-S-l") "move-focus Right")
+(define-key *top-map* (kbd "s-S-h") "exchange-direction Left")
+(define-key *top-map* (kbd "s-S-j") "exchange-direction Down")
+(define-key *top-map* (kbd "s-S-k") "exchange-direction Up")
+(define-key *top-map* (kbd "s-S-l") "exchange-direction Right")
+
+;; Next and previous for windows and groups
+(define-key *top-map* (kbd "s-n") "gnext")
+(define-key *top-map* (kbd "s-p") "gprev")
+(define-key *root-map* (kbd "n") "next")
+(define-key *root-map* (kbd "p") "prev")
 
 (gselect-keys)
 (gmove-keys)
@@ -132,34 +146,34 @@
 (defcommand spiral-splitter () ()
   (only)
   (labels ((iter1 ()
-	     (hsplit "618/1000")
+	     (hsplit "600/1000")
 	     (move-focus :right))
 	   (iter2 ()
 	     (iter1)
-	     (vsplit "618/1000")
+	     (vsplit "600/1000")
 	     (move-focus :down))
 	   (iter3 ()
 	     (iter2)
-	     (hsplit "382/1000"))
+	     (hsplit "400/1000"))
 	   (iter4 ()
 	     (iter3)
-	     (vsplit "382/1000"))
+	     (vsplit "400/1000"))
 	   (sortinglambda (windowleft)
-		(if (> windowleft 3)
-		    (progn
-		      (iter4)
-		      (sortinglambda (- windowleft 4)))
-		    (unless (= windowleft 0)
-		      (let ((remainder (mod windowleft 4)))
-			(case remainder
-			  (1
-			   (iter1))
-			  (2
-			   (iter2))
-			  (3
-			   (iter3))
-			  (0
-			   nil)))))))
+	     (if (> windowleft 3)
+		 (progn
+		   (iter4)
+		   (sortinglambda (- windowleft 4)))
+		 (unless (= windowleft 0)
+		   (let ((remainder (mod windowleft 4)))
+		     (case remainder
+		       (1
+			(iter1))
+		       (2
+			(iter2))
+		       (3
+			(iter3))
+		       (0
+			nil)))))))
     (sortinglambda (- (windownum) 1))))
 
 
@@ -210,12 +224,22 @@
 (define-key *top-map* (kbd "s-,") "equalityplane")
 
 
+;; Triple-split horizontally
+;; Nice to easily split into 3 panes
+
+(defcommand triple-split () ()
+  (only)
+  (hsplit "1/3")
+  (move-focus :right)
+  (hsplit "1/2"))
+
+(define-key *top-map* (kbd "s-.") "triple-split")
 
 ;;
 ;; Volume
 ;;
 
-  ;;For the modeline
+;;For the modeline
 
 (defun getvolume ()
   (run-shell-command "amixer get Master | grep 'Front Left' | awk -F'[][]' '{ print $2 }'" t))
@@ -247,7 +271,7 @@
       (cond ((>= bat med) 2)
 	    ((and (>= bat crit) (< bat med) 3))
 	    (t 1)))
-0
+
 (defun getbat ()
   (parse-integer (with-open-file (*standard-input* #p"/sys/class/power_supply/BAT0/capacity")(read-line))))
 
@@ -385,19 +409,26 @@ is found, just displays nil."
 
 (add-screen-mode-line-formatter #\I #'fmt-wifi)
 
+;;
+;; Random Quotes
+;;
 
+(defun random-of (xs)
+  (nth (random (length xs)) xs))
 
 ;;
 ;; Format the modeline
 ;;
 
 ;; (setf *mode-line-foreground-color* "#33bb5e")
-(setf *mode-line-foreground-color* "#00ba9b")
- (setf *mode-line-background-color* "#444444")
+(setf *mode-line-foreground-color* "#FFFFFF")
+(setf *mode-line-background-color* "#444444")
 ;; (setf *mode-line-background-color* "#101010")
 
 (setf *screen-mode-line-format*
-      (list "|| %g || %v || ^>"
+      (list "|| %g || %v || "
+            " "
+            "^>"
 	    "%d  "
 	    "[Vol: " 
 	    '(:eval (string-trim '(#\newline) (getvolume)))
@@ -428,17 +459,17 @@ is found, just displays nil."
 ;;Message & Input Bar
 ;;
 
-;; (set-fg-color "#33bb5e")
-(set-fg-color "#00ba9b")
+;; (set-fg-color "#33bub5e")
+(set-fg-color "#FFFFFF")
 (set-bg-color "#444444")
 (set-border-color "#444444")
 (set-win-bg-color "#21252b")
-(set-focus-color "#00ba9b")
+(set-focus-color "#FFFFFF")
 (set-unfocus-color "#444444")
-(setf *maxsize-border-width* 9)
-(setf *transient-border-width* 9)
-(setf *normal-border-width* 9)
-(set-msg-border-width 10)
+(setf *maxsize-border-width* 1)
+(setf *transient-border-width* 2)
+(setf *normal-border-width* 5)
+(set-msg-border-width 6)
 (setf *window-border-style* :thin)
 (setf *message-window-gravity* :bottom-right)
 (setf *message-window-input-gravity* :bottom-right)
@@ -454,13 +485,13 @@ is found, just displays nil."
 (setf swm-gaps:*head-gaps-size* 0)
 
 ;; Inner gaps run along all the 4 borders of a window
-(setf swm-gaps:*inner-gaps-size* 25)
+(setf swm-gaps:*inner-gaps-size* 15)
 
 ;; Outer gaps add more padding to the outermost borders of a window (touching
 ;; the screen border)
-(setf swm-gaps:*outer-gaps-size* 34)
+(setf swm-gaps:*outer-gaps-size* 20)
 
-;; (toggle-gaps-on)
+(swm-gaps:toggle-gaps-on)
 
 
 
@@ -492,9 +523,26 @@ is found, just displays nil."
 ;; Mouse 
 ;;
 
-(setf *mouse-focus-policy* :sloppy)
+(setf *mouse-focus-policy* :click)
 
+(defun follow-focus (current-frame prev-frame)
+  (declare (ignore prev-frame))
+  (let* ((screen (current-screen))
+         (display (xlib:drawable-display (xlib:screen-root (screen-number screen))))
+         (width (frame-width current-frame))
+         (height (frame-height current-frame))
+         (x (frame-x current-frame))
+         (y (frame-y current-frame))
+         (mouse-x (+ (/ width 2) x))
+         (mouse-y (+ (/ height 2) y)))
+    (multiple-value-bind (global-x global-y) (xlib:global-pointer-position display)
+      (unless (and (< x global-x (+ x width))
+                   (< y global-y (+ y height)))
+        (ratwarp mouse-x mouse-y)))))
 
+(add-hook *focus-frame-hook* #'follow-focus)
+
+(run-shell-command "xinput --set-prop 11 338 0.9")
 
 ;;
 ;; Misc Key Definitions
@@ -511,26 +559,28 @@ is found, just displays nil."
 (define-key *top-map* (kbd "s-t") "exec dolphin") 
 (define-key *top-map* (kbd "s-f") "exec firefox")
 (define-key *top-map* (kbd "s-d") "exec discord")
-(define-key *top-map* (kbd "s-n") "exec nyxt")
-(define-key *top-map* (kbd "s-e") "exec (emacsclient -c -e \"(eshell)\")")
+(define-key *top-map* (kbd "s-S-n") "exec nyxt")
+(define-key *top-map* (kbd "s-e") "exec emacsclient -c -e \"(shell)\"")
 (define-key *root-map* (kbd "e") "eval (run-or-raise \"emacs\" '(:class \"Emacs\"))")
 
 ;; Some essentials
-(define-key *top-map* (kbd "C-RET") "exec konsole -e tmux")
-(define-key *top-map* (kbd "s-RET") "exec konsole -e tmux")
-(define-key *top-map* (kbd "C-k") "kill")
-(define-key *top-map* (kbd "s-x") "kill")
+;; (define-key *top-map* (kbd "C-RET") "exec xfce4-terminal")
+(define-key *top-map* (kbd "s-RET") "exec xfce4-terminal")
+;; (define-key *top-map* (kbd "C-k") "delete")
+(define-key *top-map* (kbd "s-x") "delete")
 
 ;; Reload stump
 
 (define-key *root-map* (kbd "M-r") "restart-hard")
 (define-key *top-map* (kbd "s-r") "restart-hard")
+
+(define-key *root-map* (kbd "C-s") "swank-start")
 ;;
 ;; Window Preferences
 ;;
 
 (define-frame-preference "teams"
-  (0 t t :class "teams"))
+    (0 t t :class "teams"))
 
 (define-frame-preference "dev"
     (0 t t :class "pycharm"))
@@ -544,15 +594,13 @@ is found, just displays nil."
 ;; To run on startup
 ;;
 
-(run-shell-command "feh --bg-scale ~/Pictures/synth.jpg")
+(setf *random-state* (make-random-state t))
+(run-shell-command (format nil "feh --bg-scale Pictures/wallpapers/w54"))
+(run-shell-command "dunst")
 (run-shell-command "emacs")
 (gmove 5)
-;;
-;; Radio
-;;
 
-(define-key *top-map* (kbd "F7") "radio-start")
-(define-key *top-map* (kbd "s-F7") "radio-stop")
-(define-key *root-map* (kbd "s-n") "radio-next-station")
-(define-key *root-map* (kbd "s-p") "radio-previous-station")
+;;
+;; package updates
+;; 
 
