@@ -1,4 +1,4 @@
-(in-package :stumpwm)
+;; (in-package :stumpwm)
 (set-module-dir "~/.stumpwm.d/modules")
 ;; (load-module "cl-shell")
 ;; (use-package 'cl-shell)
@@ -77,13 +77,14 @@
 
 ;; Create groups
 (defcommand create-groups () ()
-  (loop for group in '("soc" "teams" "dev" "emacs" "misc")
+  (loop for group in '("emacs" "soc" "slack" "misc")
 	do
 	   (gnewbg group)))
 
+
 (grename "www")
 (create-groups)
-
+(gnewbg-float "float")
 ;; New navigation keys
 
 (defmacro defset-key-selector (name map pref com suflist)
@@ -93,8 +94,8 @@
 	   do (define-key ,map (kbd (format nil "~a~a" ,pref x)) (format nil "~a ~a" ,com x)))))
 
 ;; Group selection and movement
-(defset-key-selector gselect-keys *root-map* "" 'gselect '(1 2 3 4 5 6))
-(defset-key-selector gmove-keys *root-map* "s-" 'gmove '(1 2 3 4 5 6))
+(defset-key-selector gselect-keys *root-map* "" 'gselect '(1 2 3 4 5 6 7))
+(defset-key-selector gmove-keys *root-map* "s-" 'gmove '(1 2 3 4 5 6 7))
 
 ;; Switch to window
 (defset-key-selector selectwindow-keys *top-map* "s-" 'select-window-by-number '(1 2 3 4 5 6 7 8 9 0))
@@ -116,6 +117,8 @@
 (define-key *top-map* (kbd "s-p") "gprev")
 (define-key *root-map* (kbd "n") "next")
 (define-key *root-map* (kbd "p") "prev")
+
+(define-key *root-map* (kbd "f") "fullscreen")
 
 (gselect-keys)
 (gmove-keys)
@@ -491,7 +494,7 @@ is found, just displays nil."
 ;; the screen border)
 (setf swm-gaps:*outer-gaps-size* 20)
 
-(swm-gaps:toggle-gaps-on)
+(swm-gaps:toggle-gaps-off)
 
 
 
@@ -543,6 +546,7 @@ is found, just displays nil."
 (add-hook *focus-frame-hook* #'follow-focus)
 
 (run-shell-command "xinput --set-prop 11 338 0.9")
+(run-shell-command "xinput --set-prop 12 337 0")
 
 ;;
 ;; Misc Key Definitions
@@ -565,7 +569,7 @@ is found, just displays nil."
 
 ;; Some essentials
 ;; (define-key *top-map* (kbd "C-RET") "exec xfce4-terminal")
-(define-key *top-map* (kbd "s-RET") "exec xfce4-terminal")
+(define-key *top-map* (kbd "s-RET") "exec alacritty")
 ;; (define-key *top-map* (kbd "C-k") "delete")
 (define-key *top-map* (kbd "s-x") "delete")
 
@@ -575,6 +579,8 @@ is found, just displays nil."
 (define-key *top-map* (kbd "s-r") "restart-hard")
 
 (define-key *root-map* (kbd "C-s") "swank-start")
+
+(define-key *root-map* (kbd "d") "exec")
 ;;
 ;; Window Preferences
 ;;
@@ -595,7 +601,7 @@ is found, just displays nil."
 ;;
 
 (setf *random-state* (make-random-state t))
-(run-shell-command (format nil "feh --bg-scale Pictures/wallpapers/w54"))
+(run-shell-command (format nil "feh --bg-scale Pictures/wallpapers/gondla.png"))
 (run-shell-command "dunst")
 (run-shell-command "emacs")
 (gmove 5)
