@@ -108,7 +108,7 @@
   :config
   (rainbow-delimiters-mode 1))
  
-(load-theme 'doom-material-dark t)
+(load-theme 'doom-monokai-pro t)
 (doom-themes-visual-bell-config)
 (global-prettify-symbols-mode +1)
  
@@ -137,8 +137,8 @@
 ;; ;; COMMON LISP AND CLOJURE
 ;; ;; 
  
-(setq inferior-lisp-program "sbcl")
-(add-to-list 'slime-contribs 'slime-repl)
+;; (setq inferior-lisp-program "sbcl")
+;; (add-to-list 'slime-contribs 'slime-repl)
  
  
 ;; ;; ADJUST PARENS
@@ -155,7 +155,11 @@
   :ensure t)
  
 (use-package company
-  :ensure t)
+  :defer nil
+  :bind (("C-<tab>" . company-manual-begin)
+         :map company-active-map
+         ("C-<tab>" . company-manual-begin)))
+
  
 (add-hook 'emacs-lisp-mode-hook (lambda () (lispy-mode 1)))
 (add-hook 'lisp-mode-hook (lambda () (lispy-mode 1)))
@@ -203,54 +207,6 @@
 
 ;; ;;
 ;; ;; JS/TS
-;; ;;
- 
-;; (require 'web-mode)
-;; (require 'typescript-mode)
- 
-;; (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
-;; (add-to-list 'auto-mode-alist '("\\.ts\\'" . web-mode))
-;; (defun setup-tide-mode ()
-;;   (interactive)
-;;   (tide-setup)
-;;   (flycheck-mode +1)
-;;   (flycheck-add-next-checker 'typescript-tide '(warning . javascript-eslint) 'append)
-;;   (setq flycheck-check-syntax-automatically '(save-mode-enabled))
-;;   (setq typescript-indent-level 2)
-;;   (eldoc-mode +1)
-;;   (tide-hl-identifier-mode +1)
-;;   (company-mode +1)
-;;   (electric-pair-mode +1))
- 
-;; (setq company-tooltip-align-annotations t)
- 
-;; (defun eslint-fix-file ()
-;;   (interactive)
-;;   (message "eslint --fix the file" (buffer-file-name))
-;;   (call-process-shell-command
-;;    (concat "yarn eslint --fix " (buffer-file-name))
-;;    nil "*Shell Command Output*" t)
-;;   (revert-buffer t t))
- 
-;; (add-hook 'web-mode-hook #'setup-tide-mode)
-;; ;; (add-hook 'before-save-hook #'eslint-fix-file)
-;; (setq web-mode-markup-indent-offset 2
-;;       web-mode-css-indent-offset 2
-;;       web-mode-code-indent-offset 2
-;;       web-mode-block-padding 2
-;;       web-mode-comment-style 2
- 
-;;       web-mode-enable-css-colorization t
-;;       web-mode-enable-auto-pairing t
-;;       web-mode-enable-comment-keywords t
-;;       web-mode-enable-current-element-highlight t
-;;       )
- 
-;; (add-hook 'web-mode-hook
-;;           (lambda () (pcase (file-name-extension "tsx") (typescript-mode))))
- 
-;; ;; 
-;; ;; SHELL, KEYS AND INIT PROGRAMS
 ;; ;;
  
 (defun efs/display-start-time ()
@@ -309,8 +265,10 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(ediprolog-program "swipl")
+ '(ediprolog-system 'swi)
  '(package-selected-packages
-   '(latex-preview-pane emojify unicode-emoticons alchemist eradio evil kotlin-mode vagrant-tramp cider yaml-mode yaml which-key wgrep web-mode use-package tide terraform-mode smartparens slime rainbow-delimiters paredit nyan-mode magit lsp-treemacs lispy ivy-posframe impatient-mode grip-mode graphql-mode flymake-flycheck flycheck-clj-kondo ediprolog doom-themes doom-modeline docker company)))
+   '(latex-preview-pane emojify unicode-emoticons alchemist eradio evil kotlin-mode vagrant-tramp cider yaml-mode yaml which-key wgrep use-package tide terraform-mode smartparens slime rainbow-delimiters paredit nyan-mode magit lsp-treemacs lispy ivy-posframe impatient-mode grip-mode graphql-mode flymake-flycheck flycheck-clj-kondo ediprolog doom-themes doom-modeline docker company)))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -319,62 +277,15 @@
  ;; If there is more than one, they won't work right.
  )
 
-(use-package tide :ensure t)
 (use-package company :ensure t)
 (use-package flycheck :ensure t)
-
-(defun setup-tide-mode ()
-  (interactive)
-  (tide-setup)
-  (flycheck-mode +1)
-  (setq flycheck-check-syntax-automatically '(save mode-enabled))
-  (eldoc-mode +1)
-  (tide-hl-identifier-mode +1)
-  ;; company is an optional dependency. You have to
-  ;; install it separately via package-install
-  ;; `M-x package-install [ret] company`
-  (company-mode +1)
-  (eldoc-mode)
-  (tide-hl-identifier-mode +1)
-  (setq web-mode-enable-auto-quoting nil)
-  (setq web-mode-markup-indent-offset 2)
-  (setq web-mode-code-indent-offset 2)
-  (setq web-mode-attr-indent-offset 2)
-  (setq web-mode-attr-value-indent-offset 2))
 
 ;; aligns annotation to the right hand side
 (setq company-tooltip-align-annotations t)
 
-  ;; formats the buffer before saving
-(add-hook 'before-save-hook 'tide-format-before-save)
-
-(add-hook 'typescript-mode-hook #'setup-tide-mode)
-(add-hook 'typescript-mode-hook #'rainbow-delimiters-mode)
-
-
-(require 'web-mode)
-
-(add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
-(add-hook 'web-mode-hook
-          (lambda ()
-            (when (string-equal "tsx" (file-name-extension buffer-file-name))
-              (progn
-                (setup-tide-mode)
-                (typescript-mode)))))
-
-(add-hook 'web-mode-hook #'turn-on-smartparens-mode t)
-
-;; enable typescript - tslint checker
-;; (flycheck-add-mode 'typescript-tslint 'web-mode)
-
-
-;; (setq cider-clojure-cli-global-options "-A:dev:test:scripts")
-
-;; (define-key paredit-mode-map (kbd "RET") nil)
-;; (define-key paredit-mode-map (kbd "C-j") 'paredit-newline)
 
 ;; Acl2 mode
-(load "~/common-lisp/acl2/emacs/emacs-acl2.el")
+;; (load "~/common-lisp/acl2/emacs/emacs-acl2.el")
 
 
 
@@ -449,3 +360,54 @@ Return the initialized session."
     ))
 
 (setf org-support-shift-select t)
+
+(add-hook 'org-mode-hook #'visual-line-mode t)
+
+(setq org-agenda-files (list "~/knowledge-base/permanent/" "~/knowledge-base/literature/"))
+
+(defun search-org-tagged-files (tag)
+  (interactive "sEnter tag: ")
+  (let* ((directory "~/knowledge-base")
+         (files (directory-files-recursively directory "\\.org$"))
+         (matching-files (seq-filter
+                          (lambda (file)
+                            (with-temp-buffer
+                              (insert-file-contents file)
+                              (goto-char (point-min))
+                              (let ((case-fold-search t))
+                                (re-search-forward
+                                 (format "#\\+Tags:[^\n]*%s" tag) nil t))))
+                          files)))
+    (if matching-files
+        (progn
+          (with-current-buffer (get-buffer-create "*Matching Org Files*")
+            (erase-buffer)
+            (insert "Files containing TAG metadata with '" tag "':\n\n")
+            (dolist (file matching-files)
+              (insert-text-button file
+                                  'action (lambda (_) (find-file file))
+                                  'follow-link t)
+              (insert "\n"))
+            (display-buffer (current-buffer))))
+      (message "No files found with TAG '%s'." tag))))
+
+
+;; (setq org-babel-lisp-eval-fn "slime-eval")
+
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((lisp . t)))
+
+(use-package ediprolog
+  :ensure t
+  :init (progn
+          (add-to-list 'auto-mode-alist '("\\.pl\\'" . prolog-mode))
+          (add-hook 'prolog-mode-hook (lambda ()
+                                        (company-mode 1)
+                                        (local-set-key (kbd "C-c c") 'ediprolog-dwim)
+                                        (local-set-key (kbd "C-c r") 'ediprolog-remove-interactions)
+                                        (local-set-key (kbd "C-c C-l") 'ediprolog-consult)))))
+
+
+(setq company-idle-delay nil)
+
