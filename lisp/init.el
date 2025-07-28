@@ -4,11 +4,12 @@
 ;; Initialization of packages
  
 (require 'package)
-(add-to-list 'package-archives
-             '("melpa" . "https://melpa.org/packages/") t)
+
+(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t)
+(add-to-list 'package-archives '("gnu"   . "https://elpa.gnu.org/packages/") t)
  
 (package-initialize)
-(package-refresh-contents)
+;; (package-refresh-contents)
  
 ;; ;; This is only needed once, near the top of the file
 (eval-when-compile
@@ -131,13 +132,23 @@
   :config
   (ivy-posframe-mode t)
   (ivy-posframe-display-at-frame-center t))
+
+;;
+;; ELIXIR
+;;
+
+(use-package elixir-mode
+  :ensure t
+  :bind (("C-c f" . lsp-find-definition)
+         ("C-c r" . lsp-find-references)))
+
+(add-hook 'elixir-mode-hook (lambda () (lsp)))
+
+;; 
+;; COMMON LISP AND CLOJURE
+;; 
  
- 
-;; ;; 
-;; ;; COMMON LISP AND CLOJURE
-;; ;; 
- 
-;; (setq inferior-lisp-program "sbcl")
+(setq inferior-lisp-program "sbcl --dynamic-space-size 4Gb")
 ;; (add-to-list 'slime-contribs 'slime-repl)
  
  
@@ -182,6 +193,8 @@
  
 (use-package lsp-mode
   :ensure t)
+
+(setq lsp-file-watch-threshold 10000)
 
 (use-package flycheck-clj-kondo
   :ensure t)
@@ -265,10 +278,13 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(custom-enabled-themes '(doom-monokai-octagon))
+ '(custom-safe-themes
+   '("350fef8767e45b0f81dd54c986ee6854857f27067bac88d2b1c2a6fa7fecb522" default))
  '(ediprolog-program "swipl")
  '(ediprolog-system 'swi)
  '(package-selected-packages
-   '(latex-preview-pane emojify unicode-emoticons alchemist eradio evil kotlin-mode vagrant-tramp cider yaml-mode yaml which-key wgrep use-package tide terraform-mode smartparens slime rainbow-delimiters paredit nyan-mode magit lsp-treemacs lispy ivy-posframe impatient-mode grip-mode graphql-mode flymake-flycheck flycheck-clj-kondo ediprolog doom-themes doom-modeline docker company)))
+   '(magit transient unobtrusive-magit-theme exec-path-from-shell yasnippet elixir-mode pyim-basedict pyim latex-preview-pane emojify unicode-emoticons alchemist eradio evil kotlin-mode vagrant-tramp yaml-mode yaml which-key wgrep use-package tide terraform-mode smartparens slime rainbow-delimiters paredit nyan-mode lsp-treemacs lispy ivy-posframe impatient-mode grip-mode graphql-mode flymake-flycheck flycheck-clj-kondo ediprolog doom-themes doom-modeline docker company)))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -277,6 +293,8 @@
  ;; If there is more than one, they won't work right.
  )
 
+(use-package transient :ensure t)
+(use-package magit :ensure t)
 (use-package company :ensure t)
 (use-package flycheck :ensure t)
 
@@ -403,11 +421,24 @@ Return the initialized session."
   :init (progn
           (add-to-list 'auto-mode-alist '("\\.pl\\'" . prolog-mode))
           (add-hook 'prolog-mode-hook (lambda ()
+                                        (electric-pair-mode 1)
                                         (company-mode 1)
                                         (local-set-key (kbd "C-c c") 'ediprolog-dwim)
                                         (local-set-key (kbd "C-c r") 'ediprolog-remove-interactions)
-                                        (local-set-key (kbd "C-c C-l") 'ediprolog-consult)))))
+                                        (local-set-key (kbd "C-c C-l") 'ediprolog-consult)
+                                        (local-set-key (kbd "C-c k") (lambda ()
+                                                                       (interactive)
+                                                                       (kill-process "ediprolog")
+                                                                       (ediprolog-remove-interactions)))))))
 
 
 (setq company-idle-delay nil)
 
+(set-language-environment "UTF-8")
+(prefer-coding-system 'utf-8)
+
+(set-fontset-font t 'han (font-spec :family "Noto Sans CJK SC"))
+
+(set-face-attribute 'default nil :height 120)
+
+(exec-path-from-shell-initialize)
